@@ -10,6 +10,7 @@ export interface JwtAccessPayload {
 export interface JwtRefreshPayload {
   sub: string;
   type: 'refresh';
+  v: number; // refreshTokenVersion, khớp với User.refreshTokenVersion lúc phát hành
 }
 
 export function signAccessToken(payload: JwtAccessPayload): string {
@@ -17,9 +18,9 @@ export function signAccessToken(payload: JwtAccessPayload): string {
   return jwt.sign(payload, env.JWT_SECRET, options);
 }
 
-export function signRefreshToken(userId: string): string {
+export function signRefreshToken(userId: string, version: number): string {
   const options: SignOptions = { expiresIn: env.JWT_REFRESH_TTL as SignOptions['expiresIn'] };
-  return jwt.sign({ sub: userId, type: 'refresh' } satisfies JwtRefreshPayload, env.JWT_REFRESH_SECRET, options);
+  return jwt.sign({ sub: userId, type: 'refresh', v: version } satisfies JwtRefreshPayload, env.JWT_REFRESH_SECRET, options);
 }
 
 export function verifyAccessToken(token: string): JwtAccessPayload {

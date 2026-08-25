@@ -7,7 +7,7 @@ import { DrugModel } from '../modules/drugs/drug.model';
 import { InteractionModel } from '../modules/interactions/interaction.model';
 import { PriceModel } from '../modules/prices/price.model';
 import { viNormalize } from '../shared/utils/vietnamese-slug';
-import { connectMongo } from '../shared/config/db';
+import { connectMongo, disconnectMongo } from '../shared/config/db';
 
 const SEED_DRUGS = [
   {
@@ -526,10 +526,12 @@ async function seed() {
   console.log(`  ✓ ${drugs.length} drugs × ${pharmacies.length} pharmacies`);
 
   console.log('\n✅ Seed complete!');
+  await disconnectMongo();
   process.exit(0);
 }
 
-seed().catch((err) => {
+seed().catch(async (err) => {
   console.error('Seed failed:', err);
+  await disconnectMongo().catch(() => undefined);
   process.exit(1);
 });

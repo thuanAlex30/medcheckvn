@@ -43,37 +43,38 @@ export async function getAlternativesWithPrices(
     'activeIngredients.rxCUI': primaryIng.rxCUI,
   }).lean();
 
+  if (alternatives.length === 0) return [];
+
+  // Bulk-load giá rẻ nhất cho từng drugId trong 1 round-trip thay vì N+1.
+  const drugIds = [target._id, ...alternatives.map((a) => a._id)];
+  const allPrices = await PriceModel.aggregate<{
+    _id: typeof drugIds[number];
+    minPrice: number;
+  }>([
+    { $match: { drugId: { $in: drugIds } } },
+    { $group: { _id: '$drugId', minPrice: { $min: '$price' } } },
+  ]);
+  const minPriceByDrugId = new Map(allPrices.map((p) => [String(p._id), p.minPrice]));
+
+  const targetPrice = minPriceByDrugId.get(String(target._id));
+
   const results: AlternativeDrug[] = [];
   for (const alt of alternatives) {
-    // Lấy giá rẻ nhất
-    const cheapest = await PriceModel.findOne({
-      drugId: alt._id,
-    })
-      .sort({ price: 1 })
-      .lean();
-
-    const targetPrices = await PriceModel.findOne({ drugId: target._id })
-      .sort({ price: 1 })
-      .lean();
-
-    const altPrice = cheapest?.price;
-    const targetPrice = targetPrices?.price;
-
-    if (altPrice && targetPrice) {
-      const savings = ((targetPrice - altPrice) / targetPrice) * 100;
-      if (savings < 15) continue; // chỉ gợi ý nếu tiết kiệm > 15%
-      results.push({
-        drug: {
-          id: String(alt._id),
-          slug: alt.slug,
-          brandNameVi: alt.brandNameVi,
-          activeIngredients: alt.activeIngredients.map((i) => i.name),
-          confidenceLevel: alt.confidenceLevel,
-        },
-        cheapestPrice: altPrice,
-        savingsPercent: Math.round(savings),
-      });
-    }
+    const altPrice = minPriceByDrugId.get(String(alt._id));
+    if (!altPrice || !targetPrice) continue;
+    const savings = ((targetPrice - altPrice) / targetPrice) * 100;
+    if (savings < 15) continue; // chỉ gợi ý nếu tiết kiệm > 15%
+    results.push({
+      drug: {
+        id: String(alt._id),
+        slug: alt.slug,
+        brandNameVi: alt.brandNameVi,
+        activeIngredients: alt.activeIngredients.map((i) => i.name),
+        confidenceLevel: alt.confidenceLevel,
+      },
+      cheapestPrice: altPrice,
+      savingsPercent: Math.round(savings),
+    });
   }
 
   return results.sort((a, b) => (b.savingsPercent ?? 0) - (a.savingsPercent ?? 0));

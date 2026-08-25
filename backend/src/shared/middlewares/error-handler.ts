@@ -55,7 +55,9 @@ export function errorHandler(
     res.status(400).json({
       error: 'ValidationError',
       message: 'Request payload không hợp lệ',
-      details: err.flatten(),
+      details: {
+        fieldErrors: err.flatten().fieldErrors,
+      },
     });
     return;
   }

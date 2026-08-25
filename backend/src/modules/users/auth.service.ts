@@ -41,7 +41,7 @@ export async function register(input: RegisterInput): Promise<{ accessToken: str
   const payload: JwtAccessPayload = { sub: doc.id, email: doc.email, role: doc.role as JwtAccessPayload['role'] };
   return {
     accessToken: signAccessToken(payload),
-    refreshToken: signRefreshToken(doc.id),
+    refreshToken: signRefreshToken(doc.id, doc.refreshTokenVersion),
     user: payload,
   };
 }
@@ -56,7 +56,7 @@ export async function login(input: LoginInput): Promise<{ accessToken: string; r
   const payload: JwtAccessPayload = { sub: doc.id, email: doc.email, role: doc.role as JwtAccessPayload['role'] };
   return {
     accessToken: signAccessToken(payload),
-    refreshToken: signRefreshToken(doc.id),
+    refreshToken: signRefreshToken(doc.id, doc.refreshTokenVersion),
     user: payload,
   };
 }
@@ -71,12 +71,25 @@ export async function refreshTokens(refreshToken: string): Promise<{ accessToken
 
   const doc = await UserModel.findById(payload.sub);
   if (!doc) throw new HttpError(401, 'Người dùng không tồn tại');
+  // Nếu version trong token != version hiện tại → token đã bị thu hồi (sau logout hoặc rotate).
+  if (payload.v !== doc.refreshTokenVersion) {
+    throw new HttpError(401, 'Refresh token đã bị thu hồi');
+  }
+
+  // Rotate: bump version cũ, phát hành token với version mới. Như vậy mọi token cũ trở nên invalid.
+  doc.refreshTokenVersion += 1;
+  await doc.save();
 
   const newPayload: JwtAccessPayload = { sub: doc.id, email: doc.email, role: doc.role as JwtAccessPayload['role'] };
   return {
     accessToken: signAccessToken(newPayload),
-    refreshToken: signRefreshToken(doc.id),
+    refreshToken: signRefreshToken(doc.id, doc.refreshTokenVersion),
   };
+}
+
+export async function logoutUser(userId: string): Promise<void> {
+  // Bump version để mọi refresh token còn lại (cookie chưa kịp xóa) trở nên invalid.
+  await UserModel.findByIdAndUpdate(userId, { $inc: { refreshTokenVersion: 1 } });
 }
 
 export async function getUserById(id: string): Promise<UserDoc | null> {
@@ -106,7 +119,14 @@ export function decryptChronicConditions(encrypted: string): string[] {
   if (!encrypted) return [];
   try {
     return JSON.parse(decrypt(encrypted)) as string[];
-  } catch {
-    return [];
+  } catch (err) {
+    // Surface lỗi decrypt (vd: ENCRYPTION_KEY đã rotate) cho logger,
+    // nhưng KHÔNG leak chi tiết PII về user.
+    import('../../shared/config/logger.js')
+      .then(({ logger }) =>
+        logger.warn({ err }, 'Failed to decrypt chronicConditions — possible key rotation or corrupted data'),
+      )
+      .catch(() => undefined);
+    throw new HttpError(500, 'Dữ liệu bệnh nền không thể giải mã. Vui lòng liên hệ hỗ trợ.');
   }
 }

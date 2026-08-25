@@ -26,6 +26,8 @@ const EnvSchema = z.object({
   CLOUDFLARE_R2_ACCESS_KEY: z.string().optional().default(''),
   CLOUDFLARE_R2_SECRET_KEY: z.string().optional().default(''),
   SENTRY_DSN: z.string().optional().default(''),
+
+  B2B_API_KEY: z.string().min(8, 'B2B_API_KEY phải >= 8 ký tự').optional().default(''),
 });
 
 export type Env = z.infer<typeof EnvSchema>;

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { Navbar } from '@/components/navbar';
@@ -12,6 +12,14 @@ import { cn } from '@/lib/utils';
 import Link from 'next/link';
 
 export default function PriceComparisonPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gray-50" />}>
+      <PriceComparisonPageInner />
+    </Suspense>
+  );
+}
+
+function PriceComparisonPageInner() {
   const searchParams = useSearchParams();
   const initialDrugId = searchParams.get('drugId') ?? '';
   const [selectedId, setSelectedId] = useState<string | null>(initialDrugId);

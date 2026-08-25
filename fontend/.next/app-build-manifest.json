@@ -1,55 +1,112 @@
 {
   "pages": {
+    "/_not-found/page": [
+      "static/chunks/webpack-163a2522e5bd282f.js",
+      "static/chunks/1dd3208c-763ea305f32d2236.js",
+      "static/chunks/528-3ee4ece1f181e9ac.js",
+      "static/chunks/main-app-912139b8fd46924b.js",
+      "static/chunks/app/_not-found/page-c38fdf6c2b791afe.js"
+    ],
     "/layout": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/css/app/layout.css",
-      "static/chunks/app/layout.js"
-    ],
-    "/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/page.js"
-    ],
-    "/dang-nhap/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/dang-nhap/page.js"
+      "static/chunks/webpack-163a2522e5bd282f.js",
+      "static/chunks/1dd3208c-763ea305f32d2236.js",
+      "static/chunks/528-3ee4ece1f181e9ac.js",
+      "static/chunks/main-app-912139b8fd46924b.js",
+      "static/css/614404ea0f843d43.css",
+      "static/chunks/760-6c7fae957fe88a6b.js",
+      "static/chunks/app/layout-deee78fd7a934cc3.js"
     ],
     "/dang-ky/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/dang-ky/page.js"
+      "static/chunks/webpack-163a2522e5bd282f.js",
+      "static/chunks/1dd3208c-763ea305f32d2236.js",
+      "static/chunks/528-3ee4ece1f181e9ac.js",
+      "static/chunks/main-app-912139b8fd46924b.js",
+      "static/chunks/353-ed4580657d10ca6a.js",
+      "static/chunks/app/dang-ky/page-24f139fa81233578.js"
     ],
-    "/thuoc/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/thuoc/page.js"
-    ],
-    "/thuoc/[slug]/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/thuoc/[slug]/page.js"
-    ],
-    "/tuong-tac/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/tuong-tac/page.js"
-    ],
-    "/tu-thuoc/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/tu-thuoc/page.js"
+    "/dang-nhap/page": [
+      "static/chunks/webpack-163a2522e5bd282f.js",
+      "static/chunks/1dd3208c-763ea305f32d2236.js",
+      "static/chunks/528-3ee4ece1f181e9ac.js",
+      "static/chunks/main-app-912139b8fd46924b.js",
+      "static/chunks/353-ed4580657d10ca6a.js",
+      "static/chunks/app/dang-nhap/page-e8ec6eeac7900221.js"
     ],
     "/doc-don-thuoc/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/doc-don-thuoc/page.js"
+      "static/chunks/webpack-163a2522e5bd282f.js",
+      "static/chunks/1dd3208c-763ea305f32d2236.js",
+      "static/chunks/528-3ee4ece1f181e9ac.js",
+      "static/chunks/main-app-912139b8fd46924b.js",
+      "static/chunks/353-ed4580657d10ca6a.js",
+      "static/chunks/760-6c7fae957fe88a6b.js",
+      "static/chunks/155-b407a8f544517aa5.js",
+      "static/chunks/app/doc-don-thuoc/page-dc9846b29c5410f1.js"
     ],
-    "/_not-found/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/_not-found/page.js"
+    "/page": [
+      "static/chunks/webpack-163a2522e5bd282f.js",
+      "static/chunks/1dd3208c-763ea305f32d2236.js",
+      "static/chunks/528-3ee4ece1f181e9ac.js",
+      "static/chunks/main-app-912139b8fd46924b.js",
+      "static/chunks/353-ed4580657d10ca6a.js",
+      "static/chunks/760-6c7fae957fe88a6b.js",
+      "static/chunks/988-71df985f7a98bd81.js",
+      "static/chunks/438-545759cc1571b513.js",
+      "static/chunks/app/page-6e67cde00ca4e9a1.js"
+    ],
+    "/so-sanh-gia/page": [
+      "static/chunks/webpack-163a2522e5bd282f.js",
+      "static/chunks/1dd3208c-763ea305f32d2236.js",
+      "static/chunks/528-3ee4ece1f181e9ac.js",
+      "static/chunks/main-app-912139b8fd46924b.js",
+      "static/chunks/353-ed4580657d10ca6a.js",
+      "static/chunks/760-6c7fae957fe88a6b.js",
+      "static/chunks/988-71df985f7a98bd81.js",
+      "static/chunks/438-545759cc1571b513.js",
+      "static/chunks/app/so-sanh-gia/page-882811bf724cafd2.js"
+    ],
+    "/thuoc/[slug]/page": [
+      "static/chunks/webpack-163a2522e5bd282f.js",
+      "static/chunks/1dd3208c-763ea305f32d2236.js",
+      "static/chunks/528-3ee4ece1f181e9ac.js",
+      "static/chunks/main-app-912139b8fd46924b.js",
+      "static/chunks/353-ed4580657d10ca6a.js",
+      "static/chunks/760-6c7fae957fe88a6b.js",
+      "static/chunks/988-71df985f7a98bd81.js",
+      "static/chunks/438-545759cc1571b513.js",
+      "static/chunks/app/thuoc/[slug]/page-b86fea3dc0521d40.js"
+    ],
+    "/thuoc/page": [
+      "static/chunks/webpack-163a2522e5bd282f.js",
+      "static/chunks/1dd3208c-763ea305f32d2236.js",
+      "static/chunks/528-3ee4ece1f181e9ac.js",
+      "static/chunks/main-app-912139b8fd46924b.js",
+      "static/chunks/353-ed4580657d10ca6a.js",
+      "static/chunks/760-6c7fae957fe88a6b.js",
+      "static/chunks/988-71df985f7a98bd81.js",
+      "static/chunks/438-545759cc1571b513.js",
+      "static/chunks/app/thuoc/page-e5356d2cb88315b1.js"
+    ],
+    "/tu-thuoc/page": [
+      "static/chunks/webpack-163a2522e5bd282f.js",
+      "static/chunks/1dd3208c-763ea305f32d2236.js",
+      "static/chunks/528-3ee4ece1f181e9ac.js",
+      "static/chunks/main-app-912139b8fd46924b.js",
+      "static/chunks/353-ed4580657d10ca6a.js",
+      "static/chunks/760-6c7fae957fe88a6b.js",
+      "static/chunks/988-71df985f7a98bd81.js",
+      "static/chunks/155-b407a8f544517aa5.js",
+      "static/chunks/app/tu-thuoc/page-3ab0da43035cabea.js"
+    ],
+    "/tuong-tac/page": [
+      "static/chunks/webpack-163a2522e5bd282f.js",
+      "static/chunks/1dd3208c-763ea305f32d2236.js",
+      "static/chunks/528-3ee4ece1f181e9ac.js",
+      "static/chunks/main-app-912139b8fd46924b.js",
+      "static/chunks/353-ed4580657d10ca6a.js",
+      "static/chunks/760-6c7fae957fe88a6b.js",
+      "static/chunks/988-71df985f7a98bd81.js",
+      "static/chunks/438-545759cc1571b513.js",
+      "static/chunks/app/tuong-tac/page-654034bb95165c7d.js"
     ]
   }
 }

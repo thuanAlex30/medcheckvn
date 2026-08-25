@@ -27,17 +27,6 @@ const VIETNAMESE_MAP: Record<string, string> = {
 };
 
 function removeAccents(input: string): string {
-  // Thử dùng thư viện trước nếu có s�n
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const lib = require('remove-vietnamese-accents');
-    if (typeof lib === 'function') return lib(input);
-    if (lib?.default && typeof lib.default === 'function') return lib.default(input);
-  } catch {
-    // bỏ qua nếu package không khả dụng
-  }
-
-  // Fallback: manual map
   let result = '';
   for (const ch of input) {
     const lower = ch.toLowerCase();

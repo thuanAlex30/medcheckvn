@@ -9,7 +9,7 @@ import { AddToCartButton } from '@/components/interaction-matrix';
 import { Pill, AlertTriangle, Info, Package, ExternalLink, Loader2, DollarSign } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
-import type { ConfidenceLevel } from '@medcheck/shared-types';
+import type { Drug } from '@medcheck/shared-types';
 
 interface PageProps {
   params: { slug: string };
@@ -18,9 +18,9 @@ interface PageProps {
 export default function DrugDetailPage({ params }: PageProps) {
   const { slug } = params;
 
-  const { data: drug, isLoading, error } = useQuery({
+  const { data: drug, isLoading, error } = useQuery<Drug, Error>({
     queryKey: ['drug', slug],
-    queryFn: () => drugsApi.getBySlug(slug),
+    queryFn: () => drugsApi.getBySlug(slug) as Promise<Drug>,
   });
 
   if (isLoading) {
@@ -38,7 +38,7 @@ export default function DrugDetailPage({ params }: PageProps) {
     notFound();
   }
 
-  const d = drug as Record<string, unknown>;
+  const d = drug;
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
@@ -53,8 +53,8 @@ export default function DrugDetailPage({ params }: PageProps) {
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-3 mb-2 flex-wrap">
-                <h1 className="text-2xl font-bold text-gray-900">{String(d.brandNameVi ?? '')}</h1>
-                <ConfidenceBadge level={(d.confidenceLevel as ConfidenceLevel) ?? 'xam'} />
+              <h1 className="text-2xl font-bold text-gray-900">{d.brandNameVi}</h1>
+              <ConfidenceBadge level={d.confidenceLevel} />
                 {Boolean(d.prescriptionRequired) ? (
                   <span className="text-xs px-2 py-1 rounded-full bg-red-100 text-red-700 font-medium border border-red-200">
                     Kê đơn
@@ -65,34 +65,32 @@ export default function DrugDetailPage({ params }: PageProps) {
                   </span>
                 )}
               </div>
-              {Boolean(d.brandNameEn) && (
-                <p className="text-gray-500 text-sm mb-3">{String(d.brandNameEn)}</p>
+              {d.brandNameEn && (
+                <p className="text-gray-500 text-sm mb-3">{d.brandNameEn}</p>
               )}
 
               <div className="flex flex-wrap gap-3 text-sm text-gray-600">
-                {Boolean(d.manufacturer) && (
+                {d.manufacturer && (
                   <span className="flex items-center gap-1">
                     <Package className="w-4 h-4 text-gray-400" />
-                    {String(d.manufacturer)}
+                    {d.manufacturer}
                   </span>
                 )}
-                {Boolean(d.form) && (
-                  <span className="px-2.5 py-1 bg-gray-100 rounded-full text-xs">
-                    {String(d.form)}
-                  </span>
-                )}
-                {Boolean(d.registrationNumber) && (
+                <span className="px-2.5 py-1 bg-gray-100 rounded-full text-xs">
+                  {d.form}
+                </span>
+                {d.registrationNumber && (
                   <span className="text-xs text-gray-400">
-                    SĐK: {String(d.registrationNumber)}
+                    SĐK: {d.registrationNumber}
                   </span>
                 )}
               </div>
             </div>
 
             <div className="flex gap-2 flex-wrap">
-              <AddToCartButton drug={{ id: String(d._id ?? ''), slug: String(d.slug ?? ''), brandNameVi: String(d.brandNameVi ?? ''), confidenceLevel: (d.confidenceLevel as ConfidenceLevel) ?? 'xam' }} />
+              <AddToCartButton drug={{ id: d.id, slug: d.slug, brandNameVi: d.brandNameVi, confidenceLevel: d.confidenceLevel }} />
               <Link
-                href={`/so-sanh-gia?drugId=${String(d._id ?? '')}`}
+                href={`/so-sanh-gia?drugId=${d.id}`}
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-green-600 text-white hover:bg-green-700 transition-colors"
               >
                 <DollarSign className="w-4 h-4" />
@@ -103,10 +101,10 @@ export default function DrugDetailPage({ params }: PageProps) {
         </div>
 
         {/* Active ingredients */}
-        {Array.isArray(d.activeIngredients) && d.activeIngredients.length > 0 && (
+        {d.activeIngredients.length > 0 && (
           <Section title="Hoạt chất">
             <div className="space-y-2">
-              {(d.activeIngredients as Array<{ name?: string; rxCUI?: string; strength?: string }>).map((ing, i) => (
+              {d.activeIngredients.map((ing, i) => (
                 <div key={i} className="flex items-center gap-3 px-4 py-3 bg-blue-50 rounded-lg border border-blue-100">
                   <Pill className="w-5 h-5 text-blue-600 shrink-0" />
                   <div>
@@ -121,24 +119,24 @@ export default function DrugDetailPage({ params }: PageProps) {
         )}
 
         {/* Usage */}
-        {Boolean(d.usageVi) && (
+        {d.usageVi && (
           <Section title="Công dụng">
-            <p className="text-gray-700 leading-relaxed">{String(d.usageVi)}</p>
+            <p className="text-gray-700 leading-relaxed">{d.usageVi}</p>
           </Section>
         )}
 
         {/* Dosage */}
-        {Boolean(d.dosageVi) && (
+        {d.dosageVi && (
           <Section title="Liều dùng">
-            <p className="text-gray-700 leading-relaxed">{String(d.dosageVi)}</p>
+            <p className="text-gray-700 leading-relaxed">{d.dosageVi}</p>
           </Section>
         )}
 
         {/* Contraindications */}
-        {Array.isArray(d.contraindicationsVi) && d.contraindicationsVi.length > 0 && (
+        {d.contraindicationsVi.length > 0 && (
           <Section title="Chống chỉ định">
             <div className="space-y-1.5">
-              {(d.contraindicationsVi as string[]).map((c, i) => (
+              {d.contraindicationsVi.map((c, i) => (
                 <div key={i} className="flex items-start gap-2">
                   <AlertTriangle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
                   <span className="text-red-700 text-sm">{c}</span>
@@ -149,10 +147,10 @@ export default function DrugDetailPage({ params }: PageProps) {
         )}
 
         {/* Side effects */}
-        {Array.isArray(d.sideEffectsVi) && d.sideEffectsVi.length > 0 && (
+        {d.sideEffectsVi.length > 0 && (
           <Section title="Tác dụng phụ">
             <div className="space-y-2">
-              {(d.sideEffectsVi as Array<{ description?: string; frequency?: string }>).map((se, i) => (
+              {d.sideEffectsVi.map((se, i) => (
                 <div key={i} className="flex items-start gap-2">
                   <span
                     className={cn(
@@ -172,24 +170,22 @@ export default function DrugDetailPage({ params }: PageProps) {
         )}
 
         {/* Warnings */}
-        {Array.isArray(d.warningsForConditions) && d.warningsForConditions.length > 0 && (
+        {d.warningsForConditions.length > 0 && (
           <Section title="Cảnh báo theo bệnh nền">
             <div className="space-y-2">
-              {(d.warningsForConditions as Array<{ condition?: string; warningVi?: string; severity?: string }>).map((w, i) => (
+              {d.warningsForConditions.map((w, i) => (
                 <div key={i} className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
                   <div className="flex items-center gap-2 mb-1">
                     <AlertTriangle className="w-4 h-4 text-orange-500" />
                     <span className="font-semibold text-sm text-orange-900">{w.condition}</span>
-                    {w.severity && (
-                      <span className={cn(
-                        'text-xs px-2 py-0.5 rounded-full font-medium',
-                        w.severity === 'nặng' && 'bg-red-100 text-red-700',
-                        w.severity === 'trung bình' && 'bg-orange-100 text-orange-700',
-                        w.severity === 'nhẹ' && 'bg-yellow-100 text-yellow-700',
-                      )}>
-                        {w.severity}
-                      </span>
-                    )}
+                    <span className={cn(
+                      'text-xs px-2 py-0.5 rounded-full font-medium',
+                      w.severity === 'nặng' && 'bg-red-100 text-red-700',
+                      w.severity === 'trung bình' && 'bg-orange-100 text-orange-700',
+                      w.severity === 'nhẹ' && 'bg-yellow-100 text-yellow-700',
+                    )}>
+                      {w.severity}
+                    </span>
                   </div>
                   <p className="text-sm text-orange-800">{w.warningVi}</p>
                 </div>
@@ -199,10 +195,10 @@ export default function DrugDetailPage({ params }: PageProps) {
         )}
 
         {/* Source refs */}
-        {Array.isArray(d.sourceRefs) && d.sourceRefs.length > 0 && (
+        {d.sourceRefs.length > 0 && (
           <Section title="Nguồn tham khảo">
             <div className="space-y-1.5">
-              {(d.sourceRefs as Array<{ source?: string; url?: string }>).map((ref, i) => (
+              {d.sourceRefs.map((ref, i) => (
                 <div key={i} className="flex items-center gap-2 text-sm">
                   <Info className="w-3.5 h-3.5 text-gray-400" />
                   <span className="text-gray-600">{ref.source}</span>

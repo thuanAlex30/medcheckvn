@@ -1,6 +1,8 @@
+import { randomUUID } from 'node:crypto';
 import { UserModel } from './user.model';
 import { HttpError } from '../../shared/middlewares/error-handler';
 import { encrypt, decrypt } from '../../shared/utils/encryption';
+import { logger } from '../../shared/config/logger';
 import type { MedicationScheduleEntry } from '@medcheck/shared-types';
 
 export async function getSchedule(userId: string): Promise<MedicationScheduleEntry[]> {
@@ -9,8 +11,9 @@ export async function getSchedule(userId: string): Promise<MedicationScheduleEnt
   if (!user.medicationScheduleEncrypted) return [];
   try {
     return JSON.parse(decrypt(user.medicationScheduleEncrypted)) as MedicationScheduleEntry[];
-  } catch {
-    return [];
+  } catch (err) {
+    logger.warn({ err, userId }, 'Failed to decrypt medicationSchedule — possible key rotation');
+    throw new HttpError(500, 'Lịch uống thuốc không thể giải mã. Vui lòng liên hệ hỗ trợ.');
   }
 }
 
@@ -21,7 +24,7 @@ export async function setSchedule(userId: string, schedule: MedicationScheduleEn
 
 export async function addToSchedule(userId: string, entry: Omit<MedicationScheduleEntry, 'id'>): Promise<MedicationScheduleEntry> {
   const schedule = await getSchedule(userId);
-  const newEntry: MedicationScheduleEntry = { ...entry, id: crypto.randomUUID() };
+  const newEntry: MedicationScheduleEntry = { ...entry, id: randomUUID() };
   schedule.push(newEntry);
   await setSchedule(userId, schedule);
   return newEntry;

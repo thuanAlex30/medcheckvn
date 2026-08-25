@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import { PriceModel } from '../modules/prices/price.model';
 import { DrugModel } from '../modules/drugs/drug.model';
 import { logger } from '../shared/config/logger';
@@ -22,7 +23,7 @@ export class PriceScraper {
     // 1. Respect robots.txt (check with fetch('https://.../robots.txt'))
     // 2. Scrape drug price pages (Long Chau, Pharmacity public APIs if available)
     // 3. Upsert PriceModel documents
-    // For now: generate mock data for drugs that exist in DB
+    // For now: generate deterministic mock data for drugs that exist in DB.
     const drugs = await DrugModel.find({}, '_id', { limit: 20 }).lean();
     for (const drug of drugs) {
       // Skip if we already have recent price for this pharmacy
@@ -33,8 +34,10 @@ export class PriceScraper {
       }).lean();
       if (existing) continue;
 
-      // Generate realistic-looking mock price (stub)
-      const basePrice = Math.round(20000 + Math.random() * 150000);
+      // Deterministic hash → reproducible giá trong dev (cùng drugId + pharmacySource luôn ra cùng giá).
+      const seed = `${String(drug._id)}:${pharmacySource}`;
+      const hash = crypto.createHash('sha1').update(seed).digest();
+      const basePrice = 20_000 + (hash.readUInt32BE(0) % 150_000);
       await PriceModel.create({
         drugId: drug._id,
         pharmacySource,

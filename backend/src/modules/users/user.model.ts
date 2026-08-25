@@ -12,6 +12,8 @@ const UserSchema = new Schema(
     medicationScheduleEncrypted: String,
     consentGivenAt: Date,
     pushSubscription: Schema.Types.Mixed,
+    // Bump mỗi lần logout/rotate để thu hồi tất cả refresh token cũ.
+    refreshTokenVersion: { type: Number, default: 0 },
   },
   { timestamps: true },
 );

@@ -59,7 +59,6 @@ export const ocrLimiter = rateLimit({
   },
 });
 
-export function notFound(_req: Request, res: Response, next: NextFunction): void {
-  next();
+export function notFound(_req: Request, res: Response, _next: NextFunction): void {
   res.status(404).json({ error: 'NotFound', message: 'Endpoint không tồn tại' });
 }

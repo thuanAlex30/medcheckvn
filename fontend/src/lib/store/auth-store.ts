@@ -18,7 +18,7 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       accessToken: null,
       user: null,
       isLoading: false,
@@ -63,8 +63,8 @@ export const useAuthStore = create<AuthState>()(
       },
 
       refresh: async () => {
-        const { accessToken } = get();
-        if (!accessToken) return;
+        // Cho phép bootstrap session khi user mở lại tab: cookie refreshToken tự gửi,
+        // không cần accessToken hiện tại.
         try {
           const res = await authApi.refresh();
           set({ accessToken: res.accessToken });

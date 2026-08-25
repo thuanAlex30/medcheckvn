@@ -2,6 +2,7 @@ import { Router } from 'express';
 import multer from 'multer';
 import { asyncHandler } from '../../shared/middlewares/error-handler';
 import { ocrLimiter } from '../../shared/middlewares/rate-limiter';
+import { authRequired, type AuthedRequest } from '../../shared/middlewares/auth';
 import { ocrPrescription } from './prescription-parser.service';
 
 export const ocrRouter = Router();
@@ -19,9 +20,10 @@ const upload = multer({
 
 ocrRouter.post(
   '/prescription',
+  authRequired,
   ocrLimiter,
   upload.single('image'),
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: AuthedRequest, res) => {
     if (!req.file) {
       res.status(400).json({ error: 'NoImage', message: 'Cần upload ảnh đơn thuốc' });
       return;

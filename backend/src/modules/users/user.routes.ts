@@ -10,6 +10,7 @@ import {
   getUserProfile,
   updateChronicConditions,
   decryptChronicConditions,
+  logoutUser,
 } from './auth.service';
 import {
   getSchedule,
@@ -46,6 +47,10 @@ const ScheduleEntrySchema = z.object({
   startDate: z.string().datetime(),
   endDate: z.string().datetime().optional(),
   notes: z.string().optional(),
+});
+
+const ScheduleIdParamSchema = z.object({
+  id: z.string().uuid('ID lịch uống thuốc phải là UUID'),
 });
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
@@ -93,10 +98,11 @@ authRouter.post(
   }),
 );
 
-authRouter.post('/logout', (_req, res) => {
+authRouter.post('/logout', authRequired, asyncHandler(async (req: AuthedRequest, res) => {
+  await logoutUser(req.user!.sub);
   res.clearCookie('refreshToken');
   res.json({ ok: true });
-});
+}));
 
 // ── User Profile ──────────────────────────────────────────────────────────────
 
@@ -142,7 +148,7 @@ userRouter.post('/me/schedule', validateRequest({ body: ScheduleEntrySchema }), 
   res.status(201).json(entry);
 }));
 
-userRouter.delete('/me/schedule/:id', asyncHandler(async (req: AuthedRequest, res) => {
+userRouter.delete('/me/schedule/:id', validateRequest({ params: ScheduleIdParamSchema }), asyncHandler(async (req: AuthedRequest, res) => {
   await removeFromSchedule(req.user!.sub, req.params.id);
   res.json({ ok: true });
 }));

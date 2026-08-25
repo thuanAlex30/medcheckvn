@@ -1,4 +1,5 @@
 import { DrugModel, type DrugDoc } from './drug.model';
+import { AuditLogModel } from '../audit-logs/audit-log.model';
 import { viNormalize, similarity } from '../../shared/utils/vietnamese-slug';
 import type { DrugSearchHit, SearchResponse } from '@medcheck/shared-types';
 import { HttpError } from '../../shared/middlewares/error-handler';
@@ -27,12 +28,14 @@ export async function searchDrugs(q: string, limit: number): Promise<SearchRespo
 
   // Pull candidates một lần để rank trong memory (production Atlas Search sẽ dùng Lucene).
   // Giới hạn 500 candidate để tránh full scan.
+  // Escape regex metacharacters trong user input để chống ReDoS-style abuse.
+  const safeQuery = escapeRegex(query);
   const candidates = await DrugModel.find(
     {
       $or: [
-        { brandNameVi: { $regex: query, $options: 'i' } },
-        { searchNormalized: { $regex: normQuery, $options: 'i' } },
-        { 'activeIngredients.name': { $regex: query, $options: 'i' } },
+        { brandNameVi: { $regex: safeQuery, $options: 'i' } },
+        { searchNormalized: { $regex: escapeRegex(normQuery), $options: 'i' } },
+        { 'activeIngredients.name': { $regex: safeQuery, $options: 'i' } },
       ],
     },
     null,
@@ -71,6 +74,9 @@ function scoreMatch(normBrand: string, normQuery: string, normIngredients: strin
 }
 
 export async function getDrugBySlug(slug: string): Promise<unknown> {
+  if (!SLUG_PATTERN.test(slug)) {
+    throw new HttpError(400, 'Slug không hợp lệ');
+  }
   const doc = await DrugModel.findOne({ slug }).lean();
   if (!doc) throw new HttpError(404, 'Không tìm thấy thuốc');
   return doc;
@@ -90,12 +96,12 @@ export async function getAlternatives(drugId: string): Promise<DrugSearchHit[]> 
   }).lean();
 
   // Lọc strength ±10% nếu parse được số
-  const targetMg = parseStrength(targetIng.strength ?? '');
+  const targetMg = parseStrengthMg(targetIng.strength ?? '');
   const filtered = candidates.filter((c) => {
     const candIng = c.activeIngredients[0];
     if (!candIng) return false;
     if (!targetMg) return true;
-    const candMg = parseStrength(candIng.strength ?? '');
+    const candMg = parseStrengthMg(candIng.strength ?? '');
     if (!candMg) return false;
     return Math.abs(candMg - targetMg) / targetMg <= 0.1;
   });
@@ -109,10 +115,25 @@ export async function getAlternatives(drugId: string): Promise<DrugSearchHit[]> 
   }));
 }
 
-function parseStrength(s: string): number | null {
-  const m = s.match(/(\d+(?:[.,]\d+)?)/);
+/**
+ * Parse hàm lượng đầu tiên có đơn vị ra mg để so sánh.
+ * - Hỗ trợ "500mg", "0.5 g", "5 ml" → quy về mg.
+ * - Nếu không match pattern "number + unit" → trả null.
+ */
+function parseStrengthMg(s: string): number | null {
+  const m = s.match(/(\d+(?:[.,]\d+)?)\s*(mg|g|ml|mcg|iu)\b/i);
   if (!m) return null;
-  return Number(m[1].replace(',', '.'));
+  const value = Number(m[1].replace(',', '.'));
+  if (!Number.isFinite(value)) return null;
+  const unit = m[2].toLowerCase();
+  switch (unit) {
+    case 'g': return value * 1000;
+    case 'mcg': return value / 1000;
+    case 'ml':
+    case 'iu':
+    default:
+      return value;
+  }
 }
 
 // Phần 6.1 — auto-fill searchNormalized khi upsert
@@ -124,12 +145,18 @@ export function generateSlug(brand: string, strength?: string): string {
   return viSlug(`${brand}${strength ? ' ' + strength : ''}`);
 }
 
+function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+const SLUG_PATTERN = /^[a-z0-9-]+$/;
+
 export async function createDrug(input: import('./drug.schema.js').DrugUpsertInput, performedBy: string) {
   const doc = await DrugModel.create({
     ...input,
     searchNormalized: buildSearchNormalized(input.brandNameVi),
   });
-  await (await import('../audit-logs/audit-log.model.js')).AuditLogModel.create({
+  await AuditLogModel.create({
     entityType: 'drug',
     entityId: doc._id,
     action: 'create',
@@ -145,7 +172,7 @@ export async function verifyDrug(drugId: string, performedBy: string) {
     { new: true },
   );
   if (!doc) throw new HttpError(404, 'Không tìm thấy thuốc');
-  await (await import('../audit-logs/audit-log.model.js')).AuditLogModel.create({
+  await AuditLogModel.create({
     entityType: 'drug',
     entityId: doc._id,
     action: 'verify',

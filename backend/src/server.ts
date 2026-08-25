@@ -26,8 +26,8 @@ app.use(cors({
   credentials: true,
 }));
 
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 app.use(cookieParser());
 app.use(mongoSanitize()); // chống NoSQL injection
 
@@ -50,7 +50,7 @@ app.use('/api/v1/users', userRouter);
 app.use('/api/v1/ocr', ocrRouter);
 app.use('/api/v1/public', b2bRouter); // B2B freemium
 
-// Legacy redirect (trong case có link cũ)
+// Legacy redirect (deprecated — sẽ xóa ở release 0.3.0; clients nên dùng /api/v1/drugs/:slug)
 app.get('/api/drugs/:slug', (req, res) => {
   res.redirect(301, `/api/v1/drugs/${req.params.slug}`);
 });
