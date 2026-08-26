@@ -1,4 +1,4 @@
-// Seed script — import ~50 thuốc phổ biến VN để dev/test.
+// Seed script — import ~30 thuốc phổ biến VN để dev/test.
 // Chạy: npm run seed
 import '../modules/drugs/drug.model';
 import '../modules/interactions/interaction.model';
@@ -6,13 +6,34 @@ import '../modules/prices/price.model';
 import { DrugModel } from '../modules/drugs/drug.model';
 import { InteractionModel } from '../modules/interactions/interaction.model';
 import { PriceModel } from '../modules/prices/price.model';
-import { viNormalize } from '../shared/utils/vietnamese-slug';
+import { viNormalize, viSlug } from '../shared/utils/vietnamese-slug';
 import { connectMongo, disconnectMongo } from '../shared/config/db';
 
-const SEED_DRUGS = [
+interface SeedDrug {
+  brandNameVi: string;
+  brandNameEn?: string;
+  registrationNumber?: string;
+  imageUrl?: string;
+  activeIngredients: Array<{ name: string; rxCUI: string; strength: string }>;
+  form: 'viên nén' | 'viên nang' | 'siro' | 'tiêm' | 'bôi ngoài da' | 'nhỏ mắt' | 'khác';
+  manufacturer?: string;
+  prescriptionRequired: boolean;
+  usageVi?: string;
+  dosageVi?: string;
+  contraindicationsVi?: string[];
+  sideEffectsVi?: Array<{ description: string; frequency: 'thường gặp' | 'ít gặp' | 'hiếm gặp' }>;
+  warningsForConditions?: Array<{ condition: string; warningVi: string; severity: 'nặng' | 'trung bình' | 'nhẹ' }>;
+  confidenceLevel: 'xanh' | 'vang' | 'xam';
+  verifiedByPharmacist: boolean;
+  sourceRefs?: Array<{ source: string; url?: string }>;
+}
+
+const SEED_DRUGS: SeedDrug[] = [
   {
     brandNameVi: 'Paracetamol 500mg',
     brandNameEn: 'Acetaminophen 500mg',
+    registrationNumber: 'VD-12345-12',
+    imageUrl: 'https://placehold.co/256x256/png?text=Paracetamol',
     activeIngredients: [{ name: 'Paracetamol', rxCUI: '161', strength: '500mg' }],
     form: 'viên nén',
     manufacturer: 'Imexpharm',
@@ -24,13 +45,19 @@ const SEED_DRUGS = [
       { description: 'Buồn nôn, đau bụng', frequency: 'ít gặp' },
       { description: 'Phản ứng dị ứng da', frequency: 'hiếm gặp' },
     ],
+    warningsForConditions: [
+      { condition: 'suy gan', warningVi: 'Paracetamol chuyển hóa qua gan — cần giảm liều', severity: 'nặng' },
+      { condition: 'nghiện rượu', warningVi: 'Tăng nguy cơ độc gan', severity: 'trung bình' },
+    ],
     confidenceLevel: 'xanh',
     verifiedByPharmacist: true,
-    sourceRefs: [{ source: 'OpenFDA', url: 'https://openfda.gov' }],
+    sourceRefs: [{ source: 'OpenFDA', url: 'https://openfda.gov' }, { source: 'DAV.gov.vn' }],
   },
   {
     brandNameVi: 'Panadol Extra 500mg',
     brandNameEn: 'Panadol Extra',
+    registrationNumber: 'VD-21032-15',
+    imageUrl: 'https://placehold.co/256x256/png?text=Panadol',
     activeIngredients: [{ name: 'Paracetamol', rxCUI: '161', strength: '500mg' }],
     form: 'viên nén',
     manufacturer: 'GlaxoSmithKline',
@@ -51,6 +78,7 @@ const SEED_DRUGS = [
   {
     brandNameVi: 'Amoxilin 500mg',
     brandNameEn: 'Amoxicillin 500mg',
+    registrationNumber: 'VD-17892-13',
     activeIngredients: [{ name: 'Amoxicillin', rxCUI: '723', strength: '500mg' }],
     form: 'viên nang',
     manufacturer: 'Stada',
@@ -84,6 +112,9 @@ const SEED_DRUGS = [
     prescriptionRequired: true,
     usageVi: 'Ức chế bơm proton — điều trị loét dạ dày, GERD',
     dosageVi: '20mg x 1-2 lần/ngày',
+    warningsForConditions: [
+      { condition: 'suy gan', warningVi: 'Omeprazole chuyển hóa qua gan — cần giảm liều', severity: 'trung bình' },
+    ],
     confidenceLevel: 'xanh',
     verifiedByPharmacist: true,
   },
@@ -96,6 +127,9 @@ const SEED_DRUGS = [
     prescriptionRequired: true,
     usageVi: 'Thuốc hạ huyết áp, ức chế thụ thể angiotensin II',
     dosageVi: '25-50mg x 1 lần/ngày',
+    warningsForConditions: [
+      { condition: 'suy thận', warningVi: 'Theo dõi chức năng thận khi dùng Losartan', severity: 'trung bình' },
+    ],
     confidenceLevel: 'xanh',
     verifiedByPharmacist: true,
   },
@@ -109,6 +143,10 @@ const SEED_DRUGS = [
     usageVi: 'Điều trị đái tháo đường type 2',
     dosageVi: '500mg x 2-3 lần/ngày',
     contraindicationsVi: ['Suy thận nặng', 'Nhiễm acid lactic'],
+    warningsForConditions: [
+      { condition: 'suy thận', warningVi: 'Metformin thải trừ qua thận — chống chỉ định khi eGFR < 30', severity: 'nặng' },
+      { condition: 'suy gan', warningVi: 'Tăng nguy cơ nhiễm acid lactic', severity: 'nặng' },
+    ],
     confidenceLevel: 'xanh',
     verifiedByPharmacist: true,
   },
@@ -120,6 +158,9 @@ const SEED_DRUGS = [
     manufacturer: 'Bayer',
     prescriptionRequired: false,
     usageVi: 'Kháng kết tập tiểu cầu, phòng ngừa bệnh tim mạch ở liều thấp',
+    warningsForConditions: [
+      { condition: 'loét dạ dày', warningVi: 'Aspirin có thể gây xuất huyết tiêu hóa', severity: 'nặng' },
+    ],
     confidenceLevel: 'xanh',
     verifiedByPharmacist: true,
   },
@@ -132,6 +173,10 @@ const SEED_DRUGS = [
     prescriptionRequired: true,
     usageVi: 'Hạ cholesterol, phòng bệnh tim mạch',
     dosageVi: '10-20mg x 1 lần/ngày',
+    contraindicationsVi: ['Bệnh gan đang hoạt động'],
+    warningsForConditions: [
+      { condition: 'suy gan', warningVi: 'Atorvastatin chuyển hóa qua gan — theo dõi men gan', severity: 'trung bình' },
+    ],
     confidenceLevel: 'xanh',
     verifiedByPharmacist: true,
   },
@@ -144,6 +189,11 @@ const SEED_DRUGS = [
     prescriptionRequired: false,
     usageVi: 'Giảm đau, hạ sốt, kháng viêm',
     dosageVi: '200-400mg mỗi 4-6 giờ, tối đa 1200mg/ngày (OTC)',
+    contraindicationsVi: ['Loét dạ dày tá tràng', 'Suy thận nặng'],
+    warningsForConditions: [
+      { condition: 'suy thận', warningVi: 'NSAID có thể làm giảm chức năng thận', severity: 'trung bình' },
+      { condition: 'loét dạ dày', warningVi: 'NSAID tăng nguy cơ xuất huyết tiêu hóa', severity: 'nặng' },
+    ],
     confidenceLevel: 'xanh',
     verifiedByPharmacist: true,
   },
@@ -178,6 +228,10 @@ const SEED_DRUGS = [
     prescriptionRequired: true,
     usageVi: 'Corticosteroid — kháng viêm, ức chế miễn dịch',
     dosageVi: '0.5-10mg/ngày tùy bệnh',
+    warningsForConditions: [
+      { condition: 'tiểu đường', warningVi: 'Corticosteroid làm tăng glucose máu', severity: 'nặng' },
+      { condition: 'loãng xương', warningVi: 'Dùng dài ngày có thể làm nặng thêm loãng xương', severity: 'trung bình' },
+    ],
     confidenceLevel: 'xanh',
     verifiedByPharmacist: true,
   },
@@ -190,6 +244,9 @@ const SEED_DRUGS = [
     prescriptionRequired: false,
     usageVi: 'Kháng histamin H1 — trị dị ứng, ngứa, viêm mũi dị ứng',
     dosageVi: '10mg x 1 lần/ngày',
+    warningsForConditions: [
+      { condition: 'suy thận', warningVi: 'Cetirizine thải trừ qua thận — giảm liều', severity: 'nhẹ' },
+    ],
     confidenceLevel: 'xanh',
     verifiedByPharmacist: true,
   },
@@ -225,6 +282,9 @@ const SEED_DRUGS = [
     prescriptionRequired: true,
     usageVi: 'Chống trầm cảm, rối loạn lo âu (SSRI)',
     dosageVi: '50mg x 1 lần/ngày, có thể tăng sau 1 tuần',
+    warningsForConditions: [
+      { condition: 'trầm cảm', warningVi: 'Theo dõi ý nghĩ tự sát trong 2 tuần đầu dùng SSRI', severity: 'nặng' },
+    ],
     confidenceLevel: 'xanh',
     verifiedByPharmacist: true,
   },
@@ -237,6 +297,9 @@ const SEED_DRUGS = [
     prescriptionRequired: true,
     usageVi: 'Điều trị đau thần kinh, động kinh',
     dosageVi: '300mg x 3 lần/ngày, có thể tăng dần',
+    warningsForConditions: [
+      { condition: 'suy thận', warningVi: 'Gabapentin thải trừ qua thận — cần giảm liều', severity: 'trung bình' },
+    ],
     confidenceLevel: 'xanh',
     verifiedByPharmacist: true,
   },
@@ -249,7 +312,10 @@ const SEED_DRUGS = [
     prescriptionRequired: true,
     usageVi: 'Ức chế men chuyển (ACEI) — hạ huyết áp',
     dosageVi: '5-20mg x 1-2 lần/ngày',
-    contraindicationsVi: ['Thai kỳ', 'Quá mẫn cử với ACEI'],
+    contraindicationsVi: ['Thai kỳ', 'Quá mẫn với ACEI'],
+    warningsForConditions: [
+      { condition: 'suy thận', warningVi: 'ACEI có thể làm giảm chức năng thận — theo dõi creatinine', severity: 'nặng' },
+    ],
     confidenceLevel: 'xanh',
     verifiedByPharmacist: true,
   },
@@ -310,7 +376,10 @@ const SEED_DRUGS = [
     prescriptionRequired: true,
     usageVi: 'Glycoside tim — điều trị suy tim, rung nhĩ',
     dosageVi: '0.125-0.25mg/ngày, cần theo dõi nồng độ',
-    contraindicationsVi: ['Rung nhĩ thất', 'Block tim độ 2-3'],
+    contraindicationsVi: ['Block tim độ 2-3'],
+    warningsForConditions: [
+      { condition: 'suy thận', warningVi: 'Digoxin thải trừ qua thận — nguy cơ ngộ độc', severity: 'nặng' },
+    ],
     confidenceLevel: 'xanh',
     verifiedByPharmacist: true,
   },
@@ -381,151 +450,149 @@ const SEED_DRUGS = [
   },
 ];
 
-const SEED_INTERACTIONS = [
+interface SeedInteraction {
+  ingredientARxCUI: string;
+  ingredientBRxCUI: string;
+  severity: 'nặng' | 'trung bình' | 'nhẹ';
+  descriptionVi: string;
+  mechanismVi?: string;
+  recommendationVi?: string;
+}
+
+const SEED_INTERACTIONS: SeedInteraction[] = [
   {
-    ingredientARxCUI: '161', // Paracetamol
-    ingredientBRxCUI: '4603', // Furosemide
+    ingredientARxCUI: '161',
+    ingredientBRxCUI: '4603',
     severity: 'nhẹ',
     descriptionVi: 'Paracetamol có thể làm giảm tác dụng lợi tiểu của Furosemide khi dùng chung',
     recommendationVi: 'Theo dõi hiệu quả lợi tiểu, có thể cần điều chỉnh liều Furosemide',
   },
   {
-    ingredientARxCUI: '32948', // Clopidogrel
-    ingredientBRxCUI: '1191', // Aspirin
+    ingredientARxCUI: '32948',
+    ingredientBRxCUI: '1191',
     severity: 'nặng',
     descriptionVi: 'Dùng đồng thời Clopidogrel và Aspirin làm tăng nguy cơ chảy máu đáng kể',
     mechanismVi: 'Cả hai đều ức chế chức năng tiểu cầu qua cơ chế khác nhau, tác dụng cộng hưởng',
     recommendationVi: 'Chỉ dùng đồng thời khi có chỉ định rõ ràng của bác sĩ (ví dụ: sau đặt stent)',
   },
   {
-    ingredientARxCUI: '11289', // Warfarin
-    ingredientBRxCUI: '161', // Paracetamol
+    ingredientARxCUI: '11289',
+    ingredientBRxCUI: '161',
     severity: 'trung bình',
     descriptionVi: 'Paracetamol liều cao (> 2g/ngày) kéo dài có thể tăng tác dụng chống đông của Warfarin',
     mechanismVi: 'Paracetamol ức chế chuyển hóa Warfarin qua CYP450',
     recommendationVi: 'Nếu dùng Paracetamol > 2g/ngày trên 3 ngày, theo dõi INR thường xuyên hơn',
   },
   {
-    ingredientARxCUI: '723', // Amoxicillin
-    ingredientBRxCUI: '3538', // Domperidone
-    severity: 'nhẹ',
-    descriptionVi: 'Amoxicillin không ảnh hưởng đáng kể đến tác dụng của Domperidone',
-    recommendationVi: 'Có thể dùng đồng thời an toàn',
-  },
-  {
-    ingredientARxCUI: '11289', // Warfarin
-    ingredientBRxCUI: '5640', // Ibuprofen
+    ingredientARxCUI: '11289',
+    ingredientBRxCUI: '5640',
     severity: 'nặng',
     descriptionVi: 'Ibuprofen làm tăng nguy cơ chảy máu dạ dày và tăng tác dụng chống đông của Warfarin',
     mechanismVi: 'NSAID ức chế COX, giảm tổng hợp prostacyclin bảo vệ niêm mạc dạ dày, đồng thời tăng nguy cơ xuất huyết',
     recommendationVi: 'Tránh dùng đồng thời. Ưu tiên dùng Paracetamol thay thế nếu cần giảm đau',
   },
   {
-    ingredientARxCUI: '11289', // Warfarin
-    ingredientBRxCUI: '1191', // Aspirin
+    ingredientARxCUI: '11289',
+    ingredientBRxCUI: '1191',
     severity: 'nặng',
     descriptionVi: 'Dùng đồng thời Warfarin và Aspirin làm tăng rất cao nguy cơ chảy máu, đặc biệt xuất huyết tiêu hóa',
     mechanismVi: 'Warfarin giảm yếu tố đông máu, Aspirin ức chế kết tập tiểu cầu — nguy cơ cộng hưởng cao',
     recommendationVi: 'Chỉ dùng đồng thời khi có chỉ định đặc biệt của bác sĩ, cần theo dõi INR và biểu hiện chảy máu sớm',
   },
   {
-    ingredientARxCUI: '11289', // Warfarin
-    ingredientBRxCUI: '32948', // Clopidogrel
+    ingredientARxCUI: '11289',
+    ingredientBRxCUI: '32948',
     severity: 'nặng',
     descriptionVi: 'Phối hợp Warfarin + Clopidogrel làm tăng nguy cơ xuất huyết nghiêm trọng',
     recommendationVi: 'Chỉ khi lợi ích vượt rủi ro rõ ràng. Theo dõi sát INR và dấu hiệu chảy máu',
   },
   {
-    ingredientARxCUI: '6809', // Metformin
-    ingredientBRxCUI: '4603', // Furosemide
+    ingredientARxCUI: '6809',
+    ingredientBRxCUI: '4603',
     severity: 'trung bình',
     descriptionVi: 'Furosemide có thể ảnh hưởng đến kiểm soát đường huyết và tăng nguy cơ nhiễm acid lactic nếu dùng chung',
     mechanismVi: 'Furosemide gây mất nước và rối loạn điện giải, có thể làm tăng nguy cơ lactic acidosis',
     recommendationVi: 'Theo dõi chức năng thận và glucose máu thường xuyên khi phối hợp',
   },
   {
-    ingredientARxCUI: '7646', // Omeprazole
-    ingredientBRxCUI: '11289', // Warfarin
+    ingredientARxCUI: '7646',
+    ingredientBRxCUI: '11289',
     severity: 'nặng',
     descriptionVi: 'Omeprazole ức chế CYP2C19, làm tăng nồng độ Warfarin đáng kể — nguy cơ chảy máu cao',
     mechanismVi: 'Omeprazole giảm chuyển hóa Warfarin qua CYP2C19',
     recommendationVi: 'Nếu cần PPI, ưu tiên Pantoprazole ít tương tác hơn. Theo dõi INR chặt chẽ nếu dùng đồng thời',
   },
   {
-    ingredientARxCUI: '52175', // Losartan
-    ingredientBRxCUI: '4603', // Furosemide
+    ingredientARxCUI: '52175',
+    ingredientBRxCUI: '4603',
     severity: 'nhẹ',
     descriptionVi: 'Dùng đồng thời Losartan và Furosemide có thể gây hạ huyết áp quá mức, đặc biệt ở người già',
     mechanismVi: 'Cả hai đều có tác dụng hạ huyết áp, cộng hưởng khi bắt đầu dùng',
     recommendationVi: 'Bắt đầu ở liều thấp, theo dõi huyết áp sau 1-2 tuần đầu',
   },
   {
-    ingredientARxCUI: '83367', // Atorvastatin
-    ingredientBRxCUI: '723', // Amlodipine
+    ingredientARxCUI: '83367',
+    ingredientBRxCUI: '17767',
     severity: 'trung bình',
     descriptionVi: 'Amlodipine làm tăng nồng độ Atorvastatin, tăng nguy cơ bệnh cơ (myopathy)',
     mechanismVi: 'Amlodipine ức chế CYP3A4, giảm chuyển hóa Atorvastatin',
     recommendationVi: 'Giới hạn Atorvastatin ở liều 20mg/ngày khi dùng đồng thời với Amlodipine',
   },
   {
-    ingredientARxCUI: '17767', // Amlodipine
-    ingredientBRxCUI: '52175', // Losartan
+    ingredientARxCUI: '17767',
+    ingredientBRxCUI: '52175',
     severity: 'trung bình',
     descriptionVi: 'Phối hợp Amlodipine + Losartan là thường gặp trong điều trị tăng huyết áp, có thể gây hạ huyết áp quá mức',
-    recommendationVi: 'Kết hợp này thường được dùng khi một thuốc đơn lẻ không kiểm soát được huyết áp. Theo dõi huyết áp sau mỗi lần tăng liều',
+    recommendationVi: 'Kết hợp này thường được dùng khi một thuốc đơn lẻ không kiểm soát được huyết áp',
   },
 ];
 
 async function seed() {
   await connectMongo();
-  console.log('Seeding drugs...');
+  console.log(`Seeding ${SEED_DRUGS.length} drugs...`);
 
   for (const drug of SEED_DRUGS) {
-    const slug = drug.brandNameVi
-      .toLowerCase()
-      .replace(/[^a-z0-9\s]/g, '')
-      .replace(/\s+/g, '-');
+    const slug = viSlug(drug.brandNameVi);
     const searchNormalized = viNormalize(drug.brandNameVi);
-
     await DrugModel.findOneAndUpdate(
       { slug },
       { ...drug, slug, searchNormalized },
       { upsert: true, new: true },
     );
-    console.log(`  ✓ ${drug.brandNameVi}`);
   }
+  console.log(`  ✓ ${SEED_DRUGS.length} drugs`);
 
-  console.log('\nSeeding interactions...');
+  console.log(`Seeding ${SEED_INTERACTIONS.length} interactions...`);
   for (const intr of SEED_INTERACTIONS) {
     await InteractionModel.findOneAndUpdate(
       { ingredientARxCUI: intr.ingredientARxCUI, ingredientBRxCUI: intr.ingredientBRxCUI },
       intr,
       { upsert: true },
     );
-    console.log(`  ✓ ${intr.ingredientARxCUI} ↔ ${intr.ingredientBRxCUI} (${intr.severity})`);
   }
+  console.log(`  ✓ ${SEED_INTERACTIONS.length} interactions`);
 
-  console.log('\nSeeding prices (stub)...');
-  const drugs = await DrugModel.find({}, '_id brandNameVi', { limit: 20 }).lean();
+  console.log('\nSeeding prices (deterministic stub)...');
+  const drugs = await DrugModel.find({}, '_id brandNameVi').lean();
   const pharmacies = ['Long Châu', 'Pharmacity', 'An Khang'];
+  const { createHash } = await import('node:crypto');
+  let priceCount = 0;
   for (const drug of drugs) {
     for (const pharmacy of pharmacies) {
+      // Deterministic giá từ hash id+pharmacy để test reproducible
+      const hash = createHash('sha256').update(`${drug._id}-${pharmacy}`).digest();
+      const cents = 20000 + (hash.readUInt32BE(0) % 180000);
       await PriceModel.findOneAndUpdate(
         { drugId: drug._id, pharmacySource: pharmacy },
-        {
-          drugId: drug._id,
-          pharmacySource: pharmacy,
-          price: Math.round(20000 + Math.random() * 180000),
-          unit: 'hộp',
-          scrapedAt: new Date(),
-        },
+        { drugId: drug._id, pharmacySource: pharmacy, price: cents, unit: 'hộp', scrapedAt: new Date() },
         { upsert: true },
       );
+      priceCount++;
     }
   }
-  console.log(`  ✓ ${drugs.length} drugs × ${pharmacies.length} pharmacies`);
+  console.log(`  ✓ ${priceCount} prices`);
 
-  console.log('\n✅ Seed complete!');
+  console.log('\n Seed complete!');
   await disconnectMongo();
   process.exit(0);
 }

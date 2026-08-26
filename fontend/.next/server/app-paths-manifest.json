@@ -1,11 +1,11 @@
 {
   "/_not-found/page": "app/_not-found/page.js",
   "/dang-ky/page": "app/dang-ky/page.js",
-  "/dang-nhap/page": "app/dang-nhap/page.js",
   "/doc-don-thuoc/page": "app/doc-don-thuoc/page.js",
   "/page": "app/page.js",
-  "/so-sanh-gia/page": "app/so-sanh-gia/page.js",
+  "/dang-nhap/page": "app/dang-nhap/page.js",
   "/thuoc/[slug]/page": "app/thuoc/[slug]/page.js",
+  "/so-sanh-gia/page": "app/so-sanh-gia/page.js",
   "/thuoc/page": "app/thuoc/page.js",
   "/tu-thuoc/page": "app/tu-thuoc/page.js",
   "/tuong-tac/page": "app/tuong-tac/page.js"

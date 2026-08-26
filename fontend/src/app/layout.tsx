@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { Providers } from './providers';
+import { Disclaimer } from '@/components/disclaimer';
 
 export const metadata: Metadata = {
   title: {
@@ -23,7 +24,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="vi">
       <body className="min-h-screen bg-background antialiased">
-        <Providers>{children}</Providers>
+        <Providers>
+          <div className="mx-auto max-w-3xl px-4 pb-12 pt-4">
+            <Disclaimer />
+          </div>
+          {children}
+        </Providers>
       </body>
     </html>
   );

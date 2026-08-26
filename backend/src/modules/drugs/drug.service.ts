@@ -1,9 +1,10 @@
 import { DrugModel, type DrugDoc } from './drug.model';
 import { AuditLogModel } from '../audit-logs/audit-log.model';
-import { viNormalize, similarity } from '../../shared/utils/vietnamese-slug';
+import { viNormalize } from '../../shared/utils/vietnamese-slug';
 import type { DrugSearchHit, SearchResponse } from '@medcheck/shared-types';
 import { HttpError } from '../../shared/middlewares/error-handler';
 import { viSlug } from '../../shared/utils/vietnamese-slug';
+import { rankScore, parseStrengthMg, escapeRegexPattern } from './drug.helpers';
 
 function toHit(doc: DrugDoc): DrugSearchHit {
   return {
@@ -29,12 +30,12 @@ export async function searchDrugs(q: string, limit: number): Promise<SearchRespo
   // Pull candidates một lần để rank trong memory (production Atlas Search sẽ dùng Lucene).
   // Giới hạn 500 candidate để tránh full scan.
   // Escape regex metacharacters trong user input để chống ReDoS-style abuse.
-  const safeQuery = escapeRegex(query);
+  const safeQuery = escapeRegexPattern(query);
   const candidates = await DrugModel.find(
     {
       $or: [
         { brandNameVi: { $regex: safeQuery, $options: 'i' } },
-        { searchNormalized: { $regex: escapeRegex(normQuery), $options: 'i' } },
+        { searchNormalized: { $regex: escapeRegexPattern(normQuery), $options: 'i' } },
         { 'activeIngredients.name': { $regex: safeQuery, $options: 'i' } },
       ],
     },
@@ -45,7 +46,7 @@ export async function searchDrugs(q: string, limit: number): Promise<SearchRespo
   const scored = candidates
     .map((doc) => {
       const normBrand = viNormalize(doc.brandNameVi);
-      const score = scoreMatch(normBrand, normQuery, doc.activeIngredients.map((i) => viNormalize(i.name)));
+      const score = rankScore(normBrand, normQuery, doc.activeIngredients.map((i) => viNormalize(i.name)));
       return { doc, score };
     })
     .filter((x) => x.score > 0)
@@ -58,20 +59,7 @@ export async function searchDrugs(q: string, limit: number): Promise<SearchRespo
   };
 }
 
-function scoreMatch(normBrand: string, normQuery: string, normIngredients: string[]): number {
-  if (normBrand === normQuery) return 100;
-  if (normBrand.startsWith(normQuery)) return 80;
-  if (normIngredients.includes(normQuery)) return 70;
-  if (normIngredients.some((i) => i.startsWith(normQuery))) return 60;
-  const simBrand = similarity(normBrand, normQuery);
-  if (simBrand >= 0.85) return 50 + simBrand * 10;
-  const simIng = Math.max(0, ...normIngredients.map((i) => similarity(i, normQuery)));
-  if (simIng >= 0.85) return 40 + simIng * 10;
-  // normalized fallback — contains
-  if (normBrand.includes(normQuery)) return 30;
-  if (normIngredients.some((i) => i.includes(normQuery))) return 20;
-  return simBrand > 0.5 ? simBrand * 10 : 0;
-}
+const SLUG_PATTERN = /^[a-z0-9-]+$/;
 
 export async function getDrugBySlug(slug: string): Promise<unknown> {
   if (!SLUG_PATTERN.test(slug)) {
@@ -116,27 +104,8 @@ export async function getAlternatives(drugId: string): Promise<DrugSearchHit[]> 
 }
 
 /**
- * Parse hàm lượng đầu tiên có đơn vị ra mg để so sánh.
- * - Hỗ trợ "500mg", "0.5 g", "5 ml" → quy về mg.
- * - Nếu không match pattern "number + unit" → trả null.
+ * Phần 6.1 — auto-fill searchNormalized khi upsert.
  */
-function parseStrengthMg(s: string): number | null {
-  const m = s.match(/(\d+(?:[.,]\d+)?)\s*(mg|g|ml|mcg|iu)\b/i);
-  if (!m) return null;
-  const value = Number(m[1].replace(',', '.'));
-  if (!Number.isFinite(value)) return null;
-  const unit = m[2].toLowerCase();
-  switch (unit) {
-    case 'g': return value * 1000;
-    case 'mcg': return value / 1000;
-    case 'ml':
-    case 'iu':
-    default:
-      return value;
-  }
-}
-
-// Phần 6.1 — auto-fill searchNormalized khi upsert
 export function buildSearchNormalized(brand: string): string {
   return viNormalize(brand);
 }
@@ -144,12 +113,6 @@ export function buildSearchNormalized(brand: string): string {
 export function generateSlug(brand: string, strength?: string): string {
   return viSlug(`${brand}${strength ? ' ' + strength : ''}`);
 }
-
-function escapeRegex(s: string): string {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-const SLUG_PATTERN = /^[a-z0-9-]+$/;
 
 export async function createDrug(input: import('./drug.schema.js').DrugUpsertInput, performedBy: string) {
   const doc = await DrugModel.create({

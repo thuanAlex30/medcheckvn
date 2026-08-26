@@ -3,6 +3,7 @@ import { UserModel, type UserDoc } from './user.model';
 import { signAccessToken, signRefreshToken, verifyRefreshToken, type JwtAccessPayload } from '../../shared/utils/jwt';
 import { HttpError } from '../../shared/middlewares/error-handler';
 import { encrypt, decrypt } from '../../shared/utils/encryption';
+import { AuditLogModel } from '../audit-logs/audit-log.model';
 
 export interface RegisterInput {
   email: string;
@@ -96,8 +97,16 @@ export async function getUserById(id: string): Promise<UserDoc | null> {
   return UserModel.findById(id);
 }
 
-export async function updateConsent(userId: string): Promise<void> {
+export async function updateConsent(userId: string, consentVersion?: string): Promise<void> {
   await UserModel.findByIdAndUpdate(userId, { consentGivenAt: new Date() });
+  // Phần 7: mọi thao tác liên quan đến dữ liệu sức khỏe phải có audit log entry.
+  await AuditLogModel.create({
+    entityType: 'consent',
+    entityId: userId,
+    action: 'consent',
+    performedBy: userId,
+    diff: { consentVersion: consentVersion ?? null, at: new Date().toISOString() },
+  });
 }
 
 export async function getUserProfile(userId: string) {

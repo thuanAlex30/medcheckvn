@@ -121,7 +121,7 @@ userRouter.get('/me', asyncHandler(async (req: AuthedRequest, res) => {
 }));
 
 userRouter.post('/me/consent', validateRequest({ body: ConsentSchema }), asyncHandler(async (req: AuthedRequest, res) => {
-  await updateConsent(req.user!.sub);
+  await updateConsent(req.user!.sub, req.body.consentVersion);
   res.json({ ok: true });
 }));
 

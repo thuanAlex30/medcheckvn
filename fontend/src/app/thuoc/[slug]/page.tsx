@@ -55,7 +55,7 @@ export default function DrugDetailPage({ params }: PageProps) {
               <div className="flex items-center gap-3 mb-2 flex-wrap">
               <h1 className="text-2xl font-bold text-gray-900">{d.brandNameVi}</h1>
               <ConfidenceBadge level={d.confidenceLevel} />
-                {Boolean(d.prescriptionRequired) ? (
+                {d.prescriptionRequired ? (
                   <span className="text-xs px-2 py-1 rounded-full bg-red-100 text-red-700 font-medium border border-red-200">
                     Kê đơn
                   </span>

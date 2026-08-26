@@ -47,7 +47,7 @@ export default function SearchPage() {
               <li>• Tìm theo <strong>tên thương mại</strong> (Panadol, Augmentin...)</li>
               <li>• Tìm theo <strong>tên hoạt chất</strong> (Paracetamol, Amoxicillin...)</li>
               <li>• Gõ sai chính tả? Hệ thống vẫn tìm được nhờ fuzzy search</li>
-              <li>• Thêm thuốc vào "Kiểm tra tương tác" để xem cảnh báo</li>
+              <li>• Thêm thuốc vào &ldquo;Kiểm tra tương tác&rdquo; để xem cảnh báo</li>
             </ul>
           </div>
         </div>

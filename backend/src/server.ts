@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import mongoSanitize from 'express-mongo-sanitize';
 import pinoHttp from 'pino-http';
@@ -15,11 +16,18 @@ import { priceRouter } from './modules/prices/price.routes';
 import { authRouter, userRouter } from './modules/users/user.routes';
 import { ocrRouter } from './modules/ocr/ocr.routes';
 import { b2bRouter } from './modules/b2b/b2b.routes';
-import { startWorkers, stopWorkers } from './jobs/queue.service';
+import { healthRouter } from './modules/health/health.routes';
+import { startWorkers, stopWorkers, scheduleRecurringJobs } from './jobs/queue.service';
 
 const app = express();
 
 // ── Middleware ──────────────────────────────────────────────────────────────
+
+app.use(helmet({
+  // Cho phép Google OAuth callback và một số route B2B cần framing ngoài
+  contentSecurityPolicy: false,
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+}));
 
 app.use(cors({
   origin: env.CORS_ORIGIN,
@@ -36,9 +44,8 @@ app.use(pinoHttp({ logger } as any));
 
 // ── Routes ─────────────────────────────────────────────────────────────────
 
-app.get('/health', (_req, res) => {
-  res.json({ status: 'ok', env: env.NODE_ENV, ts: new Date().toISOString() });
-});
+// Health endpoints (Kubernetes-friendly: healthz = readiness, livez = liveness)
+app.use('/', healthRouter);
 
 // API v1
 app.use('/api/v1/drugs', drugRouter);
@@ -68,6 +75,7 @@ async function main() {
   // Khởi động BullMQ workers (bỏ qua nếu không có Redis)
   try {
     startWorkers();
+    await scheduleRecurringJobs();
   } catch {
     logger.warn('BullMQ workers skipped (Redis not configured)');
   }
